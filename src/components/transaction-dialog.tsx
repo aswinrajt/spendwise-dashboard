@@ -47,8 +47,14 @@ export function TransactionDialog({ open, onOpenChange, editing }: Props) {
 
   const submit = () => {
     const value = Number(amount);
-    if (!value || value <= 0) return toast.error("Enter a valid amount");
-    if (!categoryId) return toast.error("Pick a category");
+    if (!value || value <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (!categoryId) {
+      toast.error("Pick a category");
+      return;
+    }
     const payload = {
       type,
       amount: value,
