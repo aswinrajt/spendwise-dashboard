@@ -1,347 +1,250 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Plus,
-  Scale,
+  ArrowRight,
+  BarChart3,
+  Bot,
+  PiggyBank,
+  ShieldCheck,
+  Sparkles,
   Target,
-  TrendingDown,
-  TrendingUp,
+  Wallet,
+  Zap,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
-import { AppShell } from "@/components/app-shell";
-import { CategoryIcon } from "@/components/category-icon";
-import { TransactionDialog } from "@/components/transaction-dialog";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import {
-  CURRENT_MONTH,
-  RECENT_MONTHS,
-  currency,
-  currencyPrecise,
-  dateLabel,
-  monthLabel,
-  useFinance,
-} from "@/lib/finance-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SpendWise Dashboard — Income, Expenses & Budgets" },
+      { title: "SpendWise — Futuristic Personal Finance OS" },
       {
         name: "description",
         content:
-          "Track income, expenses, balance and monthly budgets at a glance with the SpendWise personal finance dashboard.",
+          "SpendWise turns your income, spending and budgets into a live financial control room. Track, plan and grow with clarity.",
       },
-      { property: "og:title", content: "SpendWise Dashboard — Personal Finance" },
+      { property: "og:title", content: "SpendWise — Futuristic Personal Finance OS" },
       {
         property: "og:description",
         content:
-          "See monthly income vs expenses, category spending and budget progress in one clean dashboard.",
+          "A live control room for your money: real-time balance, smart budgets and category insight.",
       },
     ],
   }),
-  component: Dashboard,
+  component: Landing,
 });
 
-function StatCard({
-  label,
-  value,
-  hint,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: typeof TrendingUp;
-  tone: "income" | "expense" | "primary" | "warning";
-}) {
-  const toneStyles = {
-    income: "bg-income-soft text-income",
-    expense: "bg-expense-soft text-expense",
-    primary: "bg-accent text-accent-foreground",
-    warning: "bg-muted text-warning",
-  }[tone];
+const features = [
+  {
+    icon: BarChart3,
+    title: "Live money telemetry",
+    body: "Income, expenses and net balance recalculated the instant anything changes.",
+  },
+  {
+    icon: Target,
+    title: "Budgets that push back",
+    body: "Category limits with progress rings that warn you before you overshoot.",
+  },
+  {
+    icon: Bot,
+    title: "Pattern detection",
+    body: "Spot the categories quietly eating your month, ranked by real share of spend.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Yours only",
+    body: "Your ledger stays in your workspace. No noise, no ads, no resold data.",
+  },
+];
 
+const stats = [
+  { value: "12%", label: "Average monthly spend cut" },
+  { value: "<1s", label: "Dashboard recalculation" },
+  { value: "8", label: "Smart spend categories" },
+  { value: "24/7", label: "Always-on tracking" },
+];
+
+function Landing() {
   return (
-    <div className="stat-card p-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="mt-2 font-display text-2xl font-extrabold tracking-tight lg:text-3xl">
-            {value}
-          </p>
-        </div>
-        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${toneStyles}`}>
-          <Icon className="h-5 w-5" />
-        </span>
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
-}
-
-function Dashboard() {
-  const { transactions, categories, budgets } = useFinance();
-  const [addOpen, setAddOpen] = useState(false);
-
-  const catById = useMemo(
-    () => Object.fromEntries(categories.map((c) => [c.id, c])),
-    [categories],
-  );
-
-  const monthTx = transactions.filter((t) => t.date.startsWith(CURRENT_MONTH));
-  const income = monthTx
-    .filter((t) => t.type === "income")
-    .reduce((s, t) => s + t.amount, 0);
-  const expenses = monthTx
-    .filter((t) => t.type === "expense")
-    .reduce((s, t) => s + t.amount, 0);
-  const monthlyBudget = budgets.reduce((s, b) => s + b.limit, 0);
-
-  const trend = RECENT_MONTHS.map((m) => {
-    const rows = transactions.filter((t) => t.date.startsWith(m));
-    return {
-      month: monthLabel(m).split(" ")[0],
-      Income: rows.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
-      Expenses: rows.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0),
-    };
-  });
-
-  const byCategory = categories
-    .map((c) => ({
-      name: c.name,
-      color: c.color,
-      value: monthTx
-        .filter((t) => t.type === "expense" && t.categoryId === c.id)
-        .reduce((s, t) => s + t.amount, 0),
-    }))
-    .filter((c) => c.value > 0)
-    .sort((a, b) => b.value - a.value);
-
-  const budgetCards = budgets.map((b) => {
-    const spent = monthTx
-      .filter((t) => t.type === "expense" && t.categoryId === b.categoryId)
-      .reduce((s, t) => s + t.amount, 0);
-    return { ...b, spent, pct: Math.min(100, Math.round((spent / b.limit) * 100)) };
-  });
-
-  return (
-    <AppShell
-      title="Dashboard"
-      subtitle={`Overview for ${monthLabel(CURRENT_MONTH)}`}
-      actions={
-        <Button className="rounded-xl" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Add</span>
-        </Button>
-      }
-    >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Total income"
-          value={currency(income)}
-          hint="Salary and freelance work this month"
-          icon={TrendingUp}
-          tone="income"
-        />
-        <StatCard
-          label="Total expenses"
-          value={currency(expenses)}
-          hint={`${monthTx.filter((t) => t.type === "expense").length} expense entries`}
-          icon={TrendingDown}
-          tone="expense"
-        />
-        <StatCard
-          label="Current balance"
-          value={currency(income - expenses)}
-          hint="Income minus expenses"
-          icon={Scale}
-          tone="primary"
-        />
-        <StatCard
-          label="Monthly budget"
-          value={currency(monthlyBudget)}
-          hint={`${currency(Math.max(0, monthlyBudget - expenses))} still available`}
-          icon={Target}
-          tone="warning"
+    <div className="dark relative min-h-screen overflow-hidden bg-background text-foreground">
+      {/* aurora backdrop */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 -left-32 h-[38rem] w-[38rem] rounded-full bg-primary/25 blur-[140px]" />
+        <div className="absolute -top-20 right-0 h-[32rem] w-[32rem] rounded-full bg-chart-2/25 blur-[150px]" />
+        <div className="absolute bottom-0 left-1/3 h-[30rem] w-[30rem] rounded-full bg-chart-5/20 blur-[150px]" />
+        <div
+          className="absolute inset-0 opacity-[0.18]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%)",
+          }}
         />
       </div>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-3">
-        <section className="stat-card p-5 xl:col-span-2">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-            <div className="min-w-0">
-              <h2 className="text-base font-bold">Income vs expenses</h2>
-              <p className="text-sm text-muted-foreground">Last six months</p>
-            </div>
-          </div>
-          <div className="mt-5 h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trend} barGap={6}>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--border)" />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  width={52}
-                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                  tickFormatter={(v: number) => `$${Math.round(v / 1000)}k`}
-                />
-                <Tooltip
-                  cursor={{ fill: "var(--muted)" }}
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    color: "var(--card-foreground)",
-                  }}
-                  formatter={(v: number) => currency(v)}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="Income" fill="var(--income)" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Expenses" fill="var(--expense)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        <section className="stat-card p-5">
-          <h2 className="text-base font-bold">Spending by category</h2>
-          <p className="text-sm text-muted-foreground">{monthLabel(CURRENT_MONTH)}</p>
-          <div className="mt-3 h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={byCategory}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={2}
-                  isAnimationActive={false}
-                  stroke="var(--card)"
-                >
-                  {byCategory.map((c) => (
-                    <Cell key={c.name} fill={`var(--${c.color})`} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    color: "var(--card-foreground)",
-                  }}
-                  formatter={(v: number) => currency(v)}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="mt-2 space-y-2">
-            {byCategory.slice(0, 5).map((c) => (
-              <li key={c.name} className="flex items-center gap-2 text-sm">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: `var(--${c.color})` }}
-                />
-                <span className="min-w-0 flex-1 truncate text-muted-foreground">{c.name}</span>
-                <span className="shrink-0 font-semibold">{currency(c.value)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-
-      <div className="mt-6 grid gap-4 xl:grid-cols-3">
-        <section className="stat-card p-5 xl:col-span-2">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-            <h2 className="min-w-0 truncate text-base font-bold">Recent transactions</h2>
-            <Button asChild variant="ghost" size="sm" className="shrink-0">
-              <Link to="/transactions">View all</Link>
+      <div className="relative">
+        <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6">
+          <Link to="/" className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lift">
+              <PiggyBank className="h-5 w-5" />
+            </span>
+            <span className="font-display text-lg font-extrabold tracking-tight">
+              SpendWise
+            </span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl">
+              <Link to="/transactions">Transactions</Link>
+            </Button>
+            <Button asChild className="rounded-xl">
+              <Link to="/dashboard">
+                Open app <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
             </Button>
           </div>
-          <ul className="mt-3 divide-y divide-border">
-            {transactions.slice(0, 7).map((t) => {
-              const cat = catById[t.categoryId];
-              return (
-                <li key={t.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3">
-                  <CategoryIcon icon={cat?.icon ?? "Circle"} color={cat?.color ?? "chart-1"} />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{t.description}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {cat?.name ?? "Uncategorized"} · {dateLabel(t.date)}
+        </header>
+
+        <section className="mx-auto max-w-6xl px-5 pt-10 pb-20 text-center sm:pt-20">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-xs font-medium tracking-wide text-muted-foreground backdrop-blur">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            The finance control room for everyday money
+          </span>
+
+          <h1 className="mx-auto mt-7 max-w-3xl font-display text-4xl leading-[1.05] font-extrabold sm:text-6xl">
+            Your money, rendered in{" "}
+            <span className="bg-gradient-to-r from-primary via-chart-2 to-chart-5 bg-clip-text text-transparent">
+              real time
+            </span>
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
+            SpendWise fuses your income, spending and budgets into one luminous
+            dashboard — so every decision is made with the full picture in view.
+          </p>
+
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg" className="rounded-xl shadow-lift">
+              <Link to="/dashboard">
+                Launch dashboard <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-xl bg-card/50">
+              <Link to="/budgets">Explore budgets</Link>
+            </Button>
+          </div>
+
+          {/* holographic preview panel */}
+          <div className="relative mx-auto mt-16 max-w-4xl">
+            <div className="absolute -inset-px rounded-3xl bg-gradient-to-r from-primary/50 via-chart-2/40 to-chart-5/50 blur-[2px]" />
+            <div className="relative rounded-3xl border border-border bg-card/70 p-5 backdrop-blur-xl sm:p-7">
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  { label: "Balance", value: "₹1,24,860", tone: "text-primary" },
+                  { label: "Income", value: "₹2,10,000", tone: "text-income" },
+                  { label: "Expenses", value: "₹85,140", tone: "text-expense" },
+                ].map((c) => (
+                  <div
+                    key={c.label}
+                    className="rounded-2xl border border-border bg-background/50 p-4 text-left"
+                  >
+                    <p className="text-xs tracking-wide text-muted-foreground uppercase">
+                      {c.label}
+                    </p>
+                    <p className={`mt-2 font-display text-2xl font-extrabold ${c.tone}`}>
+                      {c.value}
                     </p>
                   </div>
-                  <span
-                    className={`flex shrink-0 items-center gap-1 text-sm font-semibold ${
-                      t.type === "income" ? "text-income" : "text-expense"
-                    }`}
-                  >
-                    {t.type === "income" ? (
-                      <ArrowUpRight className="h-4 w-4" />
-                    ) : (
-                      <ArrowDownRight className="h-4 w-4" />
-                    )}
-                    {currencyPrecise(t.amount)}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+                ))}
+              </div>
+
+              <div className="mt-5 flex h-40 items-end gap-2 rounded-2xl border border-border bg-background/40 p-4 sm:h-48">
+                {[38, 62, 45, 78, 55, 88, 40, 70, 52, 95, 61, 74].map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-t-md bg-gradient-to-t from-primary/25 to-primary"
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section className="stat-card p-5">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-            <h2 className="min-w-0 truncate text-base font-bold">Budget progress</h2>
-            <Button asChild variant="ghost" size="sm" className="shrink-0">
-              <Link to="/budgets">Manage</Link>
+        <section className="mx-auto max-w-6xl px-5 pb-20">
+          <div className="grid gap-4 rounded-3xl border border-border bg-card/50 p-6 backdrop-blur sm:grid-cols-4">
+            {stats.map((s) => (
+              <div key={s.label} className="text-center">
+                <p className="font-display text-3xl font-extrabold text-primary">
+                  {s.value}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-5 pb-24">
+          <h2 className="text-center font-display text-3xl font-extrabold sm:text-4xl">
+            Built for people who want the whole picture
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
+            Four systems working together to keep your month on plan.
+          </p>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="group relative overflow-hidden rounded-3xl border border-border bg-card/60 p-6 backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-lift"
+              >
+                <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/10 blur-2xl transition-opacity group-hover:opacity-100 sm:opacity-0" />
+                <span className="relative grid h-11 w-11 place-items-center rounded-xl bg-accent text-accent-foreground">
+                  <f.icon className="h-5 w-5" />
+                </span>
+                <h3 className="relative mt-4 text-lg font-bold">{f.title}</h3>
+                <p className="relative mt-2 text-sm text-muted-foreground">{f.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-5 pb-24">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card/60 px-6 py-14 text-center backdrop-blur">
+            <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/30 blur-[100px]" />
+            <span className="relative inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+              <Zap className="h-3.5 w-3.5 text-primary" /> No setup required
+            </span>
+            <h2 className="relative mt-5 font-display text-3xl font-extrabold sm:text-4xl">
+              Step into your financial control room
+            </h2>
+            <p className="relative mx-auto mt-3 max-w-md text-muted-foreground">
+              Everything is preloaded. Open the dashboard and start steering your month.
+            </p>
+            <Button asChild size="lg" className="relative mt-7 rounded-xl shadow-lift">
+              <Link to="/dashboard">
+                <Wallet className="mr-1 h-4 w-4" /> Enter SpendWise
+              </Link>
             </Button>
           </div>
-          <div className="mt-4 space-y-4">
-            {budgetCards.slice(0, 5).map((b) => {
-              const cat = catById[b.categoryId];
-              const over = b.spent > b.limit;
-              return (
-                <div key={b.id}>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="min-w-0 truncate font-medium">{cat?.name}</span>
-                    <span
-                      className={`shrink-0 text-xs font-semibold ${
-                        over ? "text-expense" : "text-muted-foreground"
-                      }`}
-                    >
-                      {currency(b.spent)} / {currency(b.limit)}
-                    </span>
-                  </div>
-                  <Progress value={b.pct} className="mt-2 h-2" />
-                </div>
-              );
-            })}
-          </div>
         </section>
-      </div>
 
-      <TransactionDialog open={addOpen} onOpenChange={setAddOpen} />
-    </AppShell>
+        <footer className="border-t border-border">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-7 text-sm text-muted-foreground sm:flex-row">
+            <p>© 2026 SpendWise. Personal finance, clarified.</p>
+            <div className="flex gap-5">
+              <Link to="/dashboard" className="hover:text-foreground">
+                Dashboard
+              </Link>
+              <Link to="/budgets" className="hover:text-foreground">
+                Budgets
+              </Link>
+              <Link to="/categories" className="hover:text-foreground">
+                Categories
+              </Link>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
   );
 }
