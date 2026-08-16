@@ -238,6 +238,7 @@ function Dashboard() {
                   innerRadius={55}
                   outerRadius={85}
                   paddingAngle={2}
+                  isAnimationActive={false}
                   stroke="var(--card)"
                 >
                   {byCategory.map((c) => (
