@@ -1,6 +1,6 @@
 const TOKEN_KEY = "spendwise_token";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL ?? "https://spendwise-backend-p2mf.onrender.com";
 
 export class ApiError extends Error {
   status: number;
