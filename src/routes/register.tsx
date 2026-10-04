@@ -43,17 +43,33 @@ function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
+    <div className="dark relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 text-foreground">
+      {/* aurora backdrop */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 -left-32 h-[38rem] w-[38rem] rounded-full bg-primary/25 blur-[140px]" />
+        <div className="absolute -top-20 right-0 h-[32rem] w-[32rem] rounded-full bg-chart-2/25 blur-[150px]" />
+        <div className="absolute bottom-0 left-1/3 h-[30rem] w-[30rem] rounded-full bg-chart-5/20 blur-[150px]" />
+        <div
+          className="absolute inset-0 opacity-[0.18]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%)",
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm">
         <Link to="/" className="mb-8 flex items-center justify-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lift">
             <PiggyBank className="h-5 w-5" />
           </span>
           <span className="font-display text-lg font-extrabold tracking-tight">
             SpendWise
           </span>
         </Link>
-        <form onSubmit={submit} className="stat-card space-y-4 p-6">
+        <form onSubmit={submit} className="stat-card space-y-4 p-6 backdrop-blur-md">
           <div>
             <h1 className="text-xl font-bold">Create account</h1>
             <p className="mt-1 text-sm text-muted-foreground">
